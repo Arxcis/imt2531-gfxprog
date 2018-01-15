@@ -2,13 +2,21 @@
 #include <string>
 #include <iostream>
 #include <stdlib.h>
-#include <stdio.h>
 
 // OpenGL / glew Headers
 #define GL3_PROTOTYPES 1
-#include <GL/glew.h>
+
+#ifdef _WIN32 // Windows 10 (Visual Studio)
+
+#include "Dependencies/glew-2.1.0/include/GL/glew.h"
+#include "Dependencies/SDL2-2.0.7/include/SDL.h"
+
+#else  // Linux and Mac OS 
+
 #include <SDL2/SDL.h>
-#include <glm/glm.hpp>
+#include <GL/glew.h>
+
+#endif
 
 std::string programName = "Hello Triangle in OpenGL";
 
@@ -21,7 +29,7 @@ SDL_GLContext mainContext;
 bool setOpenGLAttributes();
 void printSDL_GL_Attributes();
 void checkSDLError(int line);
-void runGame();
+void runGameLoop();
 void cleanup();
 
 
@@ -51,33 +59,21 @@ bool init()
 
     setOpenGLAttributes();
 
-    // This makes our buffer swap syncronized with the monitor's vertical refresh
+    // This makes our buffer swap synchronized with the monitor's vertical refresh
     SDL_GL_SetSwapInterval(1);
 
-    // Init GLEW
+    // Initialise GLEW
+    
     // Apparently, this is needed for Apple. Thanks to Ross Vander for letting me know
-#ifndef __APPLE__
+#ifdef __APPLE__
     glewExperimental = GL_TRUE;
-    glewInit();
 #endif
+
+    glewInit();
 
     return true;
 }
 
-void checkSDLError(int line = -1)
-{
-    std::string error = SDL_GetError();
-
-    if (error != "")
-    {
-        std::cout << "SLD Error : " << error << std::endl;
-
-        if (line != -1)
-            std::cout << "\nLine : " << line << std::endl;
-
-        SDL_ClearError();
-    }
-}
 bool setOpenGLAttributes()
 {
     // Set our OpenGL version.
@@ -85,8 +81,8 @@ bool setOpenGLAttributes()
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
     // 3.2 is part of the modern versions of OpenGL, but most video cards whould be able to run it
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 
     // Turn on double buffering with a 24bit Z buffer.
     // You may need to change this to 16 or 32 for your system
@@ -95,12 +91,12 @@ bool setOpenGLAttributes()
     return true;
 }
 
-
 // Evaluates input events as to whether an exit key has been pressed
-bool exitKeyPressed(SDL_Event event)
+bool exitKeyPressed(SDL_Event &event)
 {
     if (event.type == SDL_KEYDOWN)
     {
+        // Performs the mapping of key symbols for further processing
         SDL_Keycode keyPressed = event.key.keysym.sym;
 
         switch (keyPressed) 
@@ -114,8 +110,6 @@ bool exitKeyPressed(SDL_Event event)
     return false;
 }
 
-
-
 // Returns false if no QUIT key has been pressed
 bool pollEvents()
 {
@@ -128,36 +122,26 @@ bool pollEvents()
     return true;
 }
 
-
-
 int main(int argc, char *argv[])
-{   
-    printf("STEP 1\n");
-  
+{
     if (!init())
         return -1;
 
-    printf("STEP 2\n");
     // Set color for window buffer
     glClearColor(0.0, 0.0, 0.0, 1.0);
-  
-    printf("STEP 3\n");
     glClear(GL_COLOR_BUFFER_BIT);
-
-    printf("STEP 4\n"); 
+    
     // Swap to window
     SDL_GL_SwapWindow(mainWindow);
-    
-    printf("STEP 5\n");
-    runGame();
-  /*    
-    printf("STEP 6\n");
+
+    runGameLoop();
+
     cleanup();
-*/
+
     return 0;
 }
 
-void runGame()
+void runGameLoop()
 {
     // Dark rose background
     glClearColor(1.0f, 0.0f, 0.4f, 0.0f);
@@ -166,20 +150,11 @@ void runGame()
         1.0f, -1.0f, 0.0f,
         0.0f,  1.0f, 0.0f,
     };
-    printf("Step 7\n");
     GLuint VertexArrayID;
     //create a handle to VA, one handle
-    /*
-    
-    // !!! SEGMENTATION FAULT !!!!
-    // !!! SEGMENTATION FAULT !!!!
-    glGenVertexArrays(0, &VertexArrayID);
-    // !!! SEGMENTATION FAULT !!!!
-    // !!! SEGMENTATION FAULT !!!!
-    
-    printf("step8\n");
+    glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
-    
+
     const GLubyte *p = glGetString(GL_VERSION);
     std::cout << "OpenGl version:" << p << std::endl;
 
@@ -203,6 +178,7 @@ void runGame()
 
     while(loop) {
         
+        // Check for incoming events
         loop = pollEvents();
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -220,7 +196,6 @@ void runGame()
     }
     // Close OpenGL window and terminate SDL
     cleanup();
-    */
 }
 
 void cleanup()
@@ -235,6 +210,20 @@ void cleanup()
     SDL_Quit();
 }
 
+void checkSDLError(int line = -1)
+{
+    std::string error = SDL_GetError();
+
+    if (error != "")
+    {
+        std::cout << "SLD Error : " << error << std::endl;
+
+        if (line != -1)
+            std::cout << "\nLine : " << line << std::endl;
+
+        SDL_ClearError();
+    }
+}
 
 void printSDL_GL_Attributes()
 {
