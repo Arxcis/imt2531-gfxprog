@@ -18,6 +18,8 @@
 
 #endif
 
+#include "shader.h"
+
 std::string programName = "Hello Triangle in OpenGL";
 
 // Our SDL_Window ( just like with SDL2 wihout OpenGL)
@@ -26,15 +28,37 @@ SDL_Window *mainWindow;
 // Our opengl context handle
 SDL_GLContext mainContext;
 
+Shader shader;
+
 bool setOpenGLAttributes();
 void printSDL_GL_Attributes();
 void checkSDLError(int line);
 void runGameLoop();
 void cleanup();
+bool SetupBufferObjects();
 
+
+const GLfloat triangle[] = {
+    -.5f,  -.5f, 0.5f, // bottom left
+    .5f,  -.5f, 0.5f,  // bottom right
+    0.0f,  .5f, 0.5f,  // top right
+};
+const uint32_t floatsPerPoint = 3; // Each poin has three values ( x, y, z)
+
+const GLfloat colors[] = {
+    0.0f,  1.0f, 1.0f, 1.0f, // bottom left
+    0.0f,  1.0f, 1.0f, 1.0f,  // bottom right
+    0.0f,  1.0f, 1.0f, 1.0f  // top right
+};
+const uint32_t floatsPerColor = 4; // Each color has 4 values ( red, green, blue, alpha )
+const uint32_t positionAttributeIndex = 0, colorAttributeIndex = 1;
+
+// Buffers
+GLuint vbo[2], vao[1];
 
 bool init()
 {
+
     // Initialize SDL's Video subsystem
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
@@ -42,9 +66,19 @@ bool init()
         return false;
     }
 
+    // Set OpenGL attributes, such as versions and profiles
+    setOpenGLAttributes();
+
     // Create our window centered at 512x512 resolution
-    mainWindow = SDL_CreateWindow(programName.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        512, 512, SDL_WINDOW_OPENGL);
+    mainWindow = SDL_CreateWindow(
+        programName.c_str(), 
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        512, 
+        512, 
+        SDL_WINDOW_OPENGL
+    );
+
 
     // Check that everything worked out okay
     if (!mainWindow)
@@ -56,8 +90,6 @@ bool init()
 
     // Create our opengl context and attach it to our window
     mainContext = SDL_GL_CreateContext(mainWindow);
-
-    setOpenGLAttributes();
 
     // This makes our buffer swap synchronized with the monitor's vertical refresh
     SDL_GL_SetSwapInterval(1);
@@ -76,13 +108,17 @@ bool init()
 
 bool setOpenGLAttributes()
 {
+    
     // Set our OpenGL version.
     // SDL_GL_CONTEXT_CORE gives us only the newer version, deprecated functions are disabled
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
     // 3.2 is part of the modern versions of OpenGL, but most video cards whould be able to run it
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+
+    // Enforce the use of the specified OpenGL version
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
 
     // Turn on double buffering with a 24bit Z buffer.
     // You may need to change this to 16 or 32 for your system
@@ -127,6 +163,8 @@ int main(int argc, char *argv[])
     if (!init())
         return -1;
 
+    printSDL_GL_Attributes();
+
     // Set color for window buffer
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -134,6 +172,10 @@ int main(int argc, char *argv[])
     // Swap to window
     SDL_GL_SwapWindow(mainWindow);
 
+
+    if (!SetupBufferObjects())
+        return -1;
+    
     runGameLoop();
 
     cleanup();
@@ -141,61 +183,63 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+
 void runGameLoop()
 {
-    // Dark rose background
-    glClearColor(1.0f, 0.0f, 0.4f, 0.0f);
-    static const GLfloat g_vertex_buffer_data[] = {
-        -1.0f, -1.0f, 0.0f,
-        1.0f, -1.0f, 0.0f,
-        0.0f,  1.0f, 0.0f,
-    };
-    GLuint VertexArrayID;
-    //create a handle to VA, one handle
-    glGenVertexArrays(1, &VertexArrayID);
-    glBindVertexArray(VertexArrayID);
-
     const GLubyte *p = glGetString(GL_VERSION);
-    std::cout << "OpenGl version:" << p << std::endl;
-
-    GLuint vertexbuffer;
-    // Generate 1 buffer, put the resulting identifier in vertexbuffer
-    glGenBuffers(1, &vertexbuffer);
-    // Allocate space and upload the data from CPU to GPU
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    // Give our vertices to OpenGL.
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-    glVertexAttribPointer(
-        0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-        3,                  // size
-        GL_FLOAT,           // type
-        GL_FALSE,           // normalized?
-        0,                  // stride
-        (void*)0            // array buffer offset  
-    );
+    std::cout << "OpenGL version:" << p << std::endl;
 
     bool loop = true;
-
+    
+    glClearColor(1.0f, 0.1f, 0.4f, 0.0f);
     while(loop) {
-        
         // Check for incoming events
         loop = pollEvents();
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // 1st attribute buffer : vertices
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-
-        // Draw the triangle!
+        glClear(GL_COLOR_BUFFER_BIT);
         glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
-        glDisableVertexAttribArray(0);
-        // Swap buffers
         SDL_GL_SwapWindow(mainWindow);
+
+       // glEnableVertexAttribArray(colorAttributeIndex);
+
+     //   glClear(GL_COLOR_BUFFER_BIT);
+       // glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+       // SDL_GL_SwapWindow(mainWindow);
+
+       // glEnableVertexAttribArray(positionAttributeIndex);
 
     }
     // Close OpenGL window and terminate SDL
     cleanup();
+}
+
+bool SetupBufferObjects(){
+    // VBO - VERTEX BUFFER OBJECT
+    glGenBuffers(2, vbo);
+
+    // VAO - VERTEX ARRAY OBJECT
+    glGenVertexArrays(1, vao);
+    glBindVertexArray(vao[0]); // Tell GPU - This is the buffer we are working on now! 
+
+
+    // POSITION
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]); 
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * floatsPerPoint * 3, triangle, GL_STATIC_DRAW);
+    glVertexAttribPointer(positionAttributeIndex, 3, GL_FLOAT,GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(positionAttributeIndex);
+    
+    // COLOR
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]); 
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * floatsPerColor * 3, colors, GL_STATIC_DRAW);
+    glVertexAttribPointer(colorAttributeIndex, 4, GL_FLOAT, GL_FALSE, 0, 0);
+       
+    if (!shader.Init())
+        return false;
+
+    shader.UseProgram();
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);        
+
+    return true;
 }
 
 void cleanup()
@@ -216,7 +260,7 @@ void checkSDLError(int line = -1)
 
     if (error != "")
     {
-        std::cout << "SLD Error : " << error << std::endl;
+        std::cout << "SDL Error : " << error << std::endl;
 
         if (line != -1)
             std::cout << "\nLine : " << line << std::endl;
@@ -234,4 +278,3 @@ void printSDL_GL_Attributes()
     SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &value);
     std::cout << "SDL_GL_CONTEXT_MINOR_VERSION: " << value << std::endl;
 }
-
