@@ -225,6 +225,7 @@ bool SetupBufferObjects(){
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]); 
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * floatsPerPoint * 3, triangle, GL_STATIC_DRAW);
     glVertexAttribPointer(positionAttributeIndex, 3, GL_FLOAT,GL_FALSE, 0, 0);
+    
     glEnableVertexAttribArray(positionAttributeIndex);
     
     // COLOR

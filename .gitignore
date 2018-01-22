@@ -1,1 +1,10 @@
 build/
+.DS_Store
+lib/
+
+dll/
+glew/
+glfw/
+glm/
+CMakeFiles/
+bin/
