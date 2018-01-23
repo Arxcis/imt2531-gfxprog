@@ -13,6 +13,10 @@
 
 using namespace glm;
 
+const int WINDOW_WIDTH = 1024;
+const int WINDOW_HEIGHT = 768;
+const int REFRESH_RATE = 30;
+
 // Render scene
 void display(GLuint &vao);
 
@@ -36,7 +40,21 @@ int main(void)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Open a window and create its OpenGL context
-	GLFWwindow* window = glfwCreateWindow(1024, 768, "OpenGL02", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "OpenGL02", NULL, NULL);
+/*	GLFWmonitor* monitor = glfwGetWindowMonitor(window);
+	//glfwSetWindowMonitor(window, monitor, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, REFRESH_RATE);
+
+
+	const GLFWvidmode* vm = glfwGetVideoMode(monitor);
+
+		printf("width:      %d\n"
+			     "height:     %d\n"
+			     "redBits:    %d\n"
+			     "greenBits:  %d\n"
+			     "blueBits:   %d\n"
+			     "refreshRate:%d\n", vm->width, vm->height, vm->redBits, vm->greenBits, vm->blueBits, vm->refreshRate);
+*/
+
 	glfwMakeContextCurrent(window);
 	if (window == NULL) {
 		fprintf(stderr, "Failed to open GLFW window.\n");
@@ -54,9 +72,8 @@ int main(void)
 	}
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 	glfwSwapInterval(1);
-	GLuint vao;
 
-	
+	GLuint vao;	
 	static_code(vao);
 
 	glClearColor(1,1,1,0);
@@ -67,53 +84,92 @@ int main(void)
 		glfwPollEvents();
 	
 	} 
-	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
-		glfwWindowShouldClose(window) == 0);
-	glfwDestroyWindow(window);
+	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS 
+		&& glfwWindowShouldClose(window) == 0);
 
+	glfwDestroyWindow(window);
 	glfwTerminate();
 	return 0;
 }
+
+const int TRIANGLE_COUNT = 2;
+const int VERTEX_COUNT = TRIANGLE_COUNT * 3;
+const int FLOAT_PER_VERTEX = 4;
+const int FLOAT_PER_COLOR = 3;
+
 void display(GLuint &vao) {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glBindVertexArray(vao);
-	glDrawArrays(GL_TRIANGLES, 0, 12);
+	glDrawArrays(GL_TRIANGLES, 0, VERTEX_COUNT);
 
 	// Swap front and back buffers
 }
+
 void static_code(GLuint &vao) {
 	// Use a Vertex Array Object
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
+	GLfloat position[VERTEX_COUNT * FLOAT_PER_VERTEX] = {
+		0.0, 0.0, 0.1, 0.5, 
+		1.0, 0.0, 0.1, 0.5,
+		0.0,-1.0, 0.1, 0.5,
 
-	GLfloat vertices_position[24] = {
-		0.1, 0.1,
-		0.5, 0.5,
-		0.1, 0.5,
+		 0.0, 0.0, -0.1, 0.5,
+		-1.0, 0.0, -0.1, 0.5,
+		 0.0,-1.0, -0.1, 0.5,
 
-		-0.1, 0.1,
-		-0.1, 0.5,
-		-0.5, 0.5,
+/*		0.1, -0.1, 0.1, -0.5,
+		0.1, -0.5, 0.1, -0.5,
+		0.5, -0.5, 0.1, -0.5,
 
-		0.1, -0.1,
-		0.1, -0.5,
-		0.5, -0.5,
+		-0.1, -0.1,-0.1, -0.5,
+		-0.5, -0.5,-0.1, -0.5,
+		-0.1, -0.5,-0.1, -0.5,
 
-		-0.1, -0.1,
-		-0.5, -0.5,
-		-0.1, -0.5,
+		 0.1, 0.0,0.1, 0.0,
+		 0.5,-0.4,0.1, 0.0,
+		 0.5, 0.4,0.1, 0.0,
+
+		-0.1, 0.0,-0.1, 0.0,
+		-0.5,-0.4,-0.1, 0.0,
+		-0.5, 0.4,-0.1, 0.0,
+
+		0.6,0.4,1.0,0.0,
+		0.6,-0.4,1.0,0.0,
+		1.0,0.0,1.0,0.0,
+
+		-0.6,0.4,-1.0,0.0,
+		-0.6,-0.4,-1.0,0.0,
+		-1.0,0.0,-1.0,0.0,
+
+		0.1,-0.6,0.1,-0.6,
+		0.1,-0.9,0.1,-0.6,
+		0.5,-0.6,0.1,-0.6,
+		
+		-0.1,-0.6,-0.1,-0.6,
+		-0.1,-0.9,-0.1,-0.6,
+		-0.5,-0.6,-0.1,-0.6,
+
+		0.1,0.6,0.1,0.6,
+		0.1,0.9,0.1,0.6,
+		0.5,0.6,0.1,0.6,
+		
+		-0.1,0.6,-0.1,0.6,
+		-0.1,0.9,-0.1,0.6,
+		-0.5,0.6,-0.1,0.6,*/
 	};
 
 
-	GLfloat colors[36];
+	GLfloat colors[VERTEX_COUNT*FLOAT_PER_COLOR];
     srand(time(NULL));
 
 	// Fill colors with random numbers from 0 to 1, use continuous polynomials for r,g,b:
 	int k = 0;
-	for (int i = 0; i < sizeof(colors) / sizeof(float) / 3; ++i) {
+	for (int i = 0; i < sizeof(colors) / sizeof(float) / FLOAT_PER_COLOR; ++i) {
+
 		float t = (float)rand() / (float)RAND_MAX;
 		colors[k] = 9 * (1 - t)*t*t*t;
 		k++;
@@ -124,36 +180,47 @@ void static_code(GLuint &vao) {
 
 	}
 
-	// Create a Vector Buffer Object that will store the vertices on video memory
+  GLfloat scale[VERTEX_COUNT];
+  for(int i = 0; i < VERTEX_COUNT; ++i)
+  	scale[i] = .4;
+
+  GLfloat rotation[VERTEX_COUNT];
+  for(int i = 0; i < VERTEX_COUNT; ++i)
+  	rotation[i] = 0.0;
+
+
 	GLuint vbo;
-	glGenBuffers(10, &vbo);
+	glGenBuffers(1, &vbo);
 
-	// Allocate space for vertex positions and colors
+	const GLsizei color_offset = sizeof(position);
+	const GLsizei scale_offset = color_offset + sizeof(colors);
+	const GLsizei rotation_offset = scale_offset + sizeof(scale);
+	const GLsizei buffer_size = rotation_offset + sizeof(rotation);
+
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	//copies the previously defined vertex data into the buffer's memory
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_position) + sizeof(colors), NULL, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, buffer_size, NULL, GL_STATIC_DRAW);
 
-	// Transfer the vertex positions:
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices_position), vertices_position);
-
-	// Transfer the vertex colors:
-	glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertices_position), sizeof(colors), colors);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, 			sizeof(position), position);
+	glBufferSubData(GL_ARRAY_BUFFER, color_offset,    sizeof(colors),   colors);
+	glBufferSubData(GL_ARRAY_BUFFER, scale_offset,    sizeof(scale),    scale);
+	glBufferSubData(GL_ARRAY_BUFFER, rotation_offset, sizeof(rotation), rotation);
 
 	GLuint shaderProgram = create_program("vertex.vert", "fragment.frag");
 
-	// Get the location of the attributes that enters in the vertex shader
 	GLint position_attribute = glGetAttribLocation(shaderProgram, "position");
-
-	// Specify how the data for position can be accessed
-	glVertexAttribPointer(position_attribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-	// Enable the attribute
+	glVertexAttribPointer(position_attribute, FLOAT_PER_VERTEX, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
 	glEnableVertexAttribArray(position_attribute);
 
-
-	// Color attribute
 	GLint color_attribute = glGetAttribLocation(shaderProgram, "color");
-	glVertexAttribPointer(color_attribute, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)sizeof(vertices_position));
-	
+	glVertexAttribPointer(color_attribute, FLOAT_PER_COLOR, GL_FLOAT, GL_FALSE, 0, (GLvoid *)color_offset);
   glEnableVertexAttribArray(color_attribute);
+
+  GLint scale_attribute = glGetAttribLocation(shaderProgram, "scale");
+	glVertexAttribPointer(scale_attribute, 1, GL_FLOAT, GL_FALSE, 0, (GLvoid *)scale_offset);
+  glEnableVertexAttribArray(scale_attribute);
+
+  GLint rotation_attribute = glGetAttribLocation(shaderProgram, "rotation");
+	glVertexAttribPointer(rotation_attribute, 1, GL_FLOAT, GL_FALSE, 0, (GLvoid *)rotation_offset);
+  glEnableVertexAttribArray(rotation_attribute);
+
 }
