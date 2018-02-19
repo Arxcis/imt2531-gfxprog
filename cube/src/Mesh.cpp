@@ -1,8 +1,8 @@
-#include "cube/Mesh.hpp"
+#include "local/mesh.hpp"
 
 namespace mesh {
 
-void bindRect(const Mesh& mesh, const glm::vec2 pos, const glm::vec2 size, const ost::Rect uv, const size_t n)
+void bindRect(const Mesh& mesh, const glm::vec2 pos, const glm::vec2 size, const atom::Rect uv, const size_t n)
 {
     const auto VBOoffset = (n * 4);
     const auto EBOoffset = (n * 6);
@@ -34,7 +34,7 @@ void bindPoint(const Mesh& mesh, const glm::vec2 pos, const glm::vec4 color)
     mesh.VBObegin[0].color = color;
 }
 
-void bindText(const Mesh& mesh, const glm::vec2 pos, const glm::vec2 size, const std::vector<ost::Rect>& uv, std::string text, float margin, glm::vec4 color)
+void bindText(const Mesh& mesh, const glm::vec2 pos, const glm::vec2 size, const std::vector<atom::Rect>& uv, std::string text, float margin, glm::vec4 color)
 {
     const size_t letterVertexCount = 4;
     const size_t letterElementCount = 6;
@@ -92,10 +92,6 @@ void updateTextColor(const Mesh& mesh, std::string text, glm::vec4 color)
 {
     const size_t letterVertexCount = 4;
 
-    #ifdef OST_DEBUG
-        if (letterVertexCount * text.size() >= mesh.VBOcount) LOG_ERROR("if (letterVertexCount * text.size() >= mesh.VBOcount), iterator out of bounds");
-    #endif
-
     auto it = mesh.VBObegin;
     for (const auto t: text) {
         it[0].color = color;
@@ -106,13 +102,9 @@ void updateTextColor(const Mesh& mesh, std::string text, glm::vec4 color)
     }
 }
 
-void updateTextUV(const Mesh& mesh, std::string text,std::vector<ost::Rect>& uvs)
+void updateTextUV(const Mesh& mesh, std::string text,std::vector<atom::Rect>& uvs)
 {
     const size_t letterVertexCount = 4;
-
-    #ifdef OST_DEBUG
-        if (letterVertexCount * text.size() >= mesh.VBOcount) LOG_ERROR("if (letterVertexCount * text.size() >= mesh.VBOcount), iterator out of bounds");
-    #endif
 
     auto it = mesh.VBObegin;
     for (const auto t: text) {
@@ -124,12 +116,8 @@ void updateTextUV(const Mesh& mesh, std::string text,std::vector<ost::Rect>& uvs
     }
 }
 
-void updateRect(const Mesh& mesh, const glm::vec2 pos, const glm::vec2 size, const ost::Rect& uv, const size_t n)
+void updateRect(const Mesh& mesh, const glm::vec2 pos, const glm::vec2 size, const atom::Rect& uv, const size_t n)
 {
-    #ifdef OST_DEBUG
-        if (n * 4 >= mesh.VBOcount) LOG_ERROR("if (n * 4 >= mesh.VBOcount), iterator out of bounds");
-    #endif
-
     auto it = mesh.VBObegin + (n * 4);
 
     it[0].position = pos;
